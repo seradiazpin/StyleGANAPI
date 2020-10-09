@@ -160,8 +160,8 @@ def generate_projection_mix(src_seeds, style_ranges, image):
 
     proj.start([image_array])
     projection_images = []
-    steps = 300
-    snap = 100
+    steps = 10
+    snap = 10
     with g_Session.as_default():
         for step in proj.runSteps(steps):
             print('\rstep: %d' % step, end='', flush=True)

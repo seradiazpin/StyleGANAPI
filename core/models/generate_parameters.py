@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from fastapi import UploadFile, File
+from typing import Optional, List, Any
 
 
 class GenerateParameters(BaseModel):
@@ -11,3 +12,4 @@ class MixParameters(BaseModel):
     seed1: Optional[int]
     seed2: Optional[int]
     style: Optional[int]
+
