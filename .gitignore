@@ -13,3 +13,4 @@ example.png
 *.log
 .vscode/
 .idea
+data/firebase/firebasekey.json

@@ -15,7 +15,7 @@ async def generate_image_bs64() -> str:
 
 
 @router.post("/generator/imageByVector", tags=["generator"])
-def generate_image_latent_vector(item: GenerateParameters)-> str:
+def generate_image_latent_vector(item: GenerateParameters) -> str:
     return generate_image(item.seed, item.latent_vector)
 
 
