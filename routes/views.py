@@ -1,12 +1,18 @@
 from typing import Dict
+from apis.gallery.gallery import gallery
 from apis.generator.generator import generate_image
 from apis.projector.projector import project_image, project_mix, mix
 from fastapi import APIRouter, Depends, UploadFile, File, Form
 from fastapi.responses import FileResponse, JSONResponse
 
-from core.models.generate_parameters import MixParameters, GenerateParameters
+from core.models.generate_parameters import MixParameters, GenerateParameters, GalleryPagination
 
 router = APIRouter()
+
+
+@router.post("/gallery/images", tags=["gallery"])
+async def gallery_images(item: GalleryPagination):
+    return gallery(item.page, item.size)["img"]
 
 
 @router.get("/generator/image", tags=["generator"])

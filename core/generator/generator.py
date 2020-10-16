@@ -1,3 +1,4 @@
+import time
 import warnings
 
 from data.firebase.firebase import FireBase
@@ -13,7 +14,7 @@ import dnnlib as dnnlib
 from dnnlib import tflib
 import uuid
 
-model_path = "network/network-snapshot-008484.pkl"
+model_path = "network/network-snapshot-008964.pkl"
 model_path_vgg = "network/vgg16_zhang_perceptual.pkl"
 
 g_Gs = None
@@ -84,5 +85,6 @@ def save_image(images, file="./static/generated/example.png"):
     if file != "":
         PIL.Image.fromarray(images, 'RGB').resize(
             (1920, 1080), PIL.Image.ANTIALIAS).save(file)
-    FireBase().create(u'Generated', {"link": "generated/{0}.png".format(uuid.uuid4()), "tags": ["test"], "time": "test", "path": file})
+    FireBase().create(u'Generated', {"link": "generated/{0}.png".format(uuid.uuid4()), "tags": ["test"], "time": time.time(),
+                                     "path": file})
     return encoder.img_to_base64(new_img)

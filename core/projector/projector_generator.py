@@ -1,11 +1,15 @@
+import time
+import uuid
 import warnings
+
+from data.firebase.firebase import FireBase
+
 warnings.simplefilter(action='ignore', category=FutureWarning)
 import pickle
 import numpy as np
 import PIL.Image
 import dnnlib
 import dnnlib.tflib
-import time
 import tensorflow.compat.v1 as tf
 import os
 from threading import Lock
@@ -13,7 +17,7 @@ from core.projector.projector import Projector
 from core.training import misc
 from core.util import encoder
 
-model_path = "network/network-snapshot-008484.pkl"
+model_path = "network/network-snapshot-008964.pkl"
 model_path_vgg = "network/vgg16_zhang_perceptual.pkl"
 
 
@@ -106,6 +110,8 @@ def save_image(images, file="./static/generated/example.png"):
     if file != "":
         PIL.Image.fromarray(images, 'RGB').resize(
             (1920, 1080), PIL.Image.ANTIALIAS).save(file)
+    FireBase().create(u'Generated', {"link": "generated/{0}.png".format(uuid.uuid4()), "tags": ["test"], "time": time.time(),
+                                     "path": file})
     return encoder.img_to_base64(new_img)
 
 
@@ -113,6 +119,8 @@ def save_image(images, file="./static/generated/example.png"):
 def save_PIL_image(image, file="./static/generated/example.png"):
     if file != "":
         image.resize((1920, 1080), PIL.Image.ANTIALIAS).save(file)
+    FireBase().create(u'Generated', {"link": "generated/{0}.png".format(uuid.uuid4()), "tags": ["test"], "time": time.time(),
+                                     "path": file})
     return encoder.img_to_base64(image.resize((1920, 1080), PIL.Image.ANTIALIAS))
 
 

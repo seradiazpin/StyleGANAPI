@@ -13,3 +13,7 @@ class MixParameters(BaseModel):
     seed2: Optional[int]
     style: Optional[int]
 
+
+class GalleryPagination(BaseModel):
+    size: Optional[int]
+    page: Optional[str]

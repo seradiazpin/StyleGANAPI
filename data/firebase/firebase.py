@@ -17,8 +17,12 @@ class FireBase(object):
         ref = self.db.collection(collection).add(data)
         self.store_file(data["link"], data["path"])
 
-    def read(self, collection):
-        collection_ref = self.db.collection(collection)
+    def read(self, collection, element=None, size=16):
+        collection_ref = self.db.collection(collection).order_by(u'time', direction=firestore.Query.DESCENDING).limit(
+            size)
+        if element is not None:
+            doc = self.db.collection(collection).document(element).get()
+            collection_ref = collection_ref.start_after(doc)
         return collection_ref.stream()
 
     def update(self, collection):
@@ -32,6 +36,10 @@ class FireBase(object):
     def get_file(self, file):
         blob = self.st.blob(file)
         blob.download_to_filename("static/firebase.png")
+
+    def get_file_url(self, file):
+        blob = self.st.blob(file)
+        return blob.generate_signed_url(datetime.timedelta(seconds=300), method='GET')
 
     def store_file(self, file, file_path):
         blob = self.st.blob(file)
