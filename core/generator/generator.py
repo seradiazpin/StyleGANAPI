@@ -1,18 +1,14 @@
-import time
 import warnings
 
-from data.firebase.firebase import FireBase
+from core.util.save import save_image
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 import pickle
 import numpy as np
-import PIL.Image
 import tensorflow.compat.v1 as tf
 from threading import Lock
-from core.util import encoder
 import dnnlib as dnnlib
 from dnnlib import tflib
-import uuid
 
 model_path = "network/network-snapshot-008964.pkl"
 model_path_vgg = "network/vgg16_zhang_perceptual.pkl"
@@ -75,16 +71,5 @@ def generate(seed=4444, latents=None):
     with g_Session.as_default():
         images = Gs.run(latents, None, truncation_psi=0.5,
                         randomize_noise=True, **fmt)  # 6.95s
-    return save_image(images[0])
-
-
-def save_image(images, file="./static/generated/example.png"):
-    # Save image.
-    new_img = PIL.Image.fromarray(images, 'RGB').resize(
-        (1920, 1080), PIL.Image.ANTIALIAS)
-    if file != "":
-        PIL.Image.fromarray(images, 'RGB').resize(
-            (1920, 1080), PIL.Image.ANTIALIAS).save(file)
-    FireBase().create(u'Generated', {"link": "generated/{0}.png".format(uuid.uuid4()), "tags": ["test"], "time": time.time(),
-                                     "path": file})
-    return encoder.img_to_base64(new_img)
+    return save_image(images[0], {"type_description": "generated", "type": "0",
+                                  "latent": dict(enumerate(latents.tolist()))})

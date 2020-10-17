@@ -1,5 +1,6 @@
 from typing import Dict
-from core.projector.projector_generator import generate_projection, generate_projection_mix, mix_images
+from core.projector.projector_generator import generate_projection
+from core.mixer.mixer import  generate_projection_mix, mix_images
 
 
 def project_image(image) -> str:

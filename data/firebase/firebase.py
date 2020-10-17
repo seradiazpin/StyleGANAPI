@@ -13,9 +13,12 @@ class FireBase(object):
         self.db = firestore.client()
         self.st = storage.bucket(self.bucket)
 
-    def create(self, collection, data):
+    def create_file(self, collection, data):
         ref = self.db.collection(collection).add(data)
         self.store_file(data["link"], data["path"])
+
+    def create(self, collection, data):
+        ref = self.db.collection(collection).add(data)
 
     def read(self, collection, element=None, size=16):
         collection_ref = self.db.collection(collection).order_by(u'time', direction=firestore.Query.DESCENDING).limit(
