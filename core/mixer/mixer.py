@@ -190,16 +190,16 @@ def save_mix(src_images, src_latents, dst_images, dst_latents, mix_image, mix_la
     result = {"src": save_image(src_images,
                                 {"type_description": "mix_src", "src_id": str(id_src), "type": "2",
                                  "latent": dict(enumerate(src_latents.tolist()))},
-                                "./static/mix/src.png"),
+                                "./static/mix/"),
               "dst": save_image(dst_images,
                                 {"type_description": "mix_dst",
                                  "dst_id": str(id_dst), "type": "2",
                                  "latent": dict(enumerate(dst_latents.tolist()))},
-                                "./static/mix/dst.png"),
+                                "./static/mix/"),
               "mix": save_image(mix_image,
                                 {"type_description": "mix_rst", "mix_id": str(id_mix), "type": "2",
                                  "latent": dict(enumerate(mix_latents.tolist()))},
-                                "./static/mix/mix.png")}
+                                "./static/mix/")}
     FireBase().create(u'Mixed', {"src_id": str(id_src), "dst_id": str(id_dst), "mix_id": str(id_mix),
                                  "type_description": "mix_images", "type": "2"})
     return result

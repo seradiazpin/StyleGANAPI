@@ -16,6 +16,7 @@ class FireBase(object):
     def create_file(self, collection, data):
         ref = self.db.collection(collection).add(data)
         self.store_file(data["link"], data["path"])
+        self.store_file(data["link_small"], data["path_small"])
 
     def create(self, collection, data):
         ref = self.db.collection(collection).add(data)

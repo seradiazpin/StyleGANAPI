@@ -55,10 +55,10 @@ def generate(seed=4444, latents=None):
     global g_Session
     Gs, synthesis = load_generator()
 
-    if seed is not None:
+    if seed != 4444:
         rnd = np.random.RandomState(seed)
     else:
-        rnd = np.random.RandomState(4444)
+        rnd = np.random.RandomState()
     if latents is None or len(latents) == 0:
         latents = rnd.randn(1, Gs.input_shape[1])
     else:
@@ -69,7 +69,7 @@ def generate(seed=4444, latents=None):
     fmt = dict(output_transform=dict(
         func=dnnlib.tflib.convert_images_to_uint8, nchw_to_nhwc=True), minibatch_size=4)
     with g_Session.as_default():
-        images = Gs.run(latents, None, truncation_psi=0.5,
+        images = Gs.run(latents, None, truncation_psi=1,
                         randomize_noise=True, **fmt)  # 6.95s
     return save_image(images[0], {"type_description": "generated", "type": "0",
                                   "latent": dict(enumerate(latents.tolist()))})
