@@ -11,7 +11,6 @@ certifi==2019.11.28
 cffi==1.14.0
 chardet==3.0.4
 click==7.1.2
-dataclasses==0.7
 decorator==4.4.2
 Eel==0.12.2
 fastapi==0.61.1
