@@ -21,7 +21,7 @@ def chose_style_layers(styles: int) -> []:
 
 def mix(seed, seed2, styles) -> Dict[str, str]:
     style = chose_style_layers(styles)
-    img = mix_images(seed, seed2, style)
+    img = mix_images(seed, seed2, style, styles)
     return img
 
 

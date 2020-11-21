@@ -1,6 +1,7 @@
 import warnings
 
 from core.util.save import save_image
+from data.firebase.firebase import FireBase
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 import pickle
@@ -51,7 +52,31 @@ def load_generator():
     return g_Gs, g_Synthesis
 
 
+def check_if_exist_seed(seed):
+    fb = FireBase()
+    data = fb.read_query(u'Generated', u'seed', u'==', seed)
+    url = {}
+    if len(data) != 0:
+        for doc in data:
+            url = doc.to_dict()
+            url["link_small"] = fb.get_file_url(file=url["link_small"])
+            url["link"] = fb.get_file_url(file=url["link"])
+            url["id"] = doc.id
+        return url
+    return None
+
+
 def generate(seed=4444, latents=None):
+    exist = check_if_exist_seed(seed)
+    if exist is not None:
+        return exist
+    else:
+        generate_network(seed, latents)
+        exist = check_if_exist_seed(seed)
+        return exist
+
+
+def generate_network(seed=4444, latents=None):
     global g_Session
     Gs, synthesis = load_generator()
 
@@ -71,5 +96,5 @@ def generate(seed=4444, latents=None):
     with g_Session.as_default():
         images = Gs.run(latents, None, truncation_psi=1,
                         randomize_noise=True, **fmt)  # 6.95s
-    return save_image(images[0], {"type_description": "generated", "type": "0",
+    return save_image(images[0], {"type_description": "generated", "type": "0", "seed": seed,
                                   "latent": dict(enumerate(latents.tolist()))})

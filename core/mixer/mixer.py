@@ -16,6 +16,7 @@ from threading import Lock
 from dnnlib import tflib
 import dnnlib
 from core.util.save import save_PIL_image
+from data.firebase.firebase import FireBase
 
 model_path = "network/network-snapshot-008964.pkl"
 model_path_vgg = "network/vgg16_zhang_perceptual.pkl"
@@ -162,7 +163,21 @@ def generate_projection_mix(src_seeds, style_ranges, image):
     return a
 
 
-def mix_images(src_seeds, dst_seeds, style_ranges):
+def check_if_exist_seed(seed):
+    fb = FireBase()
+    data = fb.read_query(u'Generated', u'seed', u'==', seed)
+    url = {}
+    if len(data) != 0:
+        for doc in data:
+            url = doc.to_dict()
+            url["link_small"] = fb.get_file_url(file=url["link_small"])
+            url["link"] = fb.get_file_url(file=url["link"])
+            url["id"] = doc.id
+        return url
+    return None
+
+
+def mix_images(src_seeds, dst_seeds, style_ranges, style_tag=0):
     global g_Session
     Gs, synthesis = load_generator()
     fmt = dict(output_transform=dict(
@@ -178,28 +193,39 @@ def mix_images(src_seeds, dst_seeds, style_ranges):
         row_dlatents = np.stack([dst_dlatents[0]] * len(src_seeds))
         row_dlatents[:, style_ranges[0]] = src_dlatents[:, style_ranges[0]]
         row_images = Gs.components.synthesis.run(row_dlatents, randomize_noise=False, **fmt)
-        a = save_mix(src_images[0], src_latents, dst_images[0], dst_latents, row_images[0], row_dlatents)
+        a = save_mix(src_images[0], src_latents, src_seeds[0], dst_images[0], dst_latents, dst_seeds[0], row_images[0],
+                     row_dlatents,
+                     "{0}-{1}-{2}".format(src_seeds[0], dst_seeds[0],style_tag))
     return a
 
 
-def save_mix(src_images, src_latents, dst_images, dst_latents, mix_image, mix_latents):
+def save_mix(src_images, src_latents, src_seed, dst_images, dst_latents, dst_seed, mix_image, mix_latents, mix_seeds):
     id_mix = uuid.uuid4()
     id_src = uuid.uuid4()
     id_dst = uuid.uuid4()
-
-    result = {"src": save_image(src_images,
-                                {"type_description": "mix_src", "src_id": str(id_src), "type": "2",
-                                 "latent": dict(enumerate(src_latents.tolist()))},
-                                "./static/mix/"),
-              "dst": save_image(dst_images,
-                                {"type_description": "mix_dst",
-                                 "dst_id": str(id_dst), "type": "2",
-                                 "latent": dict(enumerate(dst_latents.tolist()))},
-                                "./static/mix/"),
-              "mix": save_image(mix_image,
-                                {"type_description": "mix_rst", "mix_id": str(id_mix), "type": "2",
-                                 "latent": dict(enumerate(mix_latents.tolist()))},
-                                "./static/mix/")}
+    src_data = check_if_exist_seed(src_seed)
+    dst_data = check_if_exist_seed(dst_seed)
+    mix_data = check_if_exist_seed(mix_seeds)
+    result = {}
+    if src_data is None:
+        save_image(src_images,
+                   {"type_description": "mix_src", "src_id": str(id_src), "type": "2",
+                    "latent": dict(enumerate(src_latents.tolist())), "seed": src_seed},
+                   "./static/mix/")
+    if dst_data is None:
+        save_image(dst_images,
+                   {"type_description": "mix_dst",
+                    "dst_id": str(id_dst), "type": "2",
+                    "latent": dict(enumerate(dst_latents.tolist())), "seed": dst_seed},
+                   "./static/mix/")
+    if mix_data is None:
+        save_image(mix_image,
+                   {"type_description": "mix_rst", "mix_id": str(id_mix), "type": "2",
+                    "latent": dict(enumerate(mix_latents.tolist())), "seed": mix_seeds},
+                   "./static/mix/")
     FireBase().create(u'Mixed', {"src_id": str(id_src), "dst_id": str(id_dst), "mix_id": str(id_mix),
                                  "type_description": "mix_images", "type": "2"})
+    result["src"] = check_if_exist_seed(src_seed)
+    result["dst"] = check_if_exist_seed(dst_seed)
+    result["mix"] = check_if_exist_seed(mix_seeds)
     return result

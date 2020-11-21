@@ -25,7 +25,9 @@ def save_firebase(file, file_names, parameters={}):
                             "time": time.time(),
                             "path": file.format(file_names["original"]),
                             "path_small": file.format(file_names["scaled"]),
+                            "seed":parameters["seed"],
                             "parameters": json.dumps(parameters)})
+    return image_id
 
 
 def save_image(images, parameters, path="./static/generated/"):
@@ -35,7 +37,6 @@ def save_image(images, parameters, path="./static/generated/"):
     Image.fromarray(images, 'RGB').resize((1920, 1080), Image.ANTIALIAS).save(file_path.format(file_mame["original"]))
     Image.fromarray(images, 'RGB').resize((480, 270), Image.ANTIALIAS).save(file_path.format(file_mame["scaled"]))
     save_firebase(file_path, file_mame, parameters)
-    return encoder.img_to_base64(new_img)
 
 
 def save_PIL_image(image, parameters):

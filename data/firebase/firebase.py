@@ -29,6 +29,9 @@ class FireBase(object):
             collection_ref = collection_ref.start_after(doc)
         return collection_ref.stream()
 
+    def read_query(self, collection, attribute, condition, value):
+        return self.db.collection(collection).where(attribute, condition, value).get()
+
     def update(self, collection):
         ref = self.db.reference(collection)
         ref.set({'test': 'test'})
