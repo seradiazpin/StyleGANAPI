@@ -56,9 +56,7 @@ def main():
 
     dlatents = proj.get_dlatents()
     noises = proj.get_noises()
-    f = open("latent.txt", "w")
-    f.write(str(dlatents))
-    f.close()
+
     print('dlatents:', dlatents.shape)
     print('noises:', len(noises), noises[0].shape, noises[-1].shape)
 

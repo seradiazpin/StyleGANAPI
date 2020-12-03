@@ -10,9 +10,11 @@ import tensorflow.compat.v1 as tf
 from threading import Lock
 import dnnlib as dnnlib
 from dnnlib import tflib
+from config import Settings
 
-model_path = "network/network-snapshot-008964.pkl"
-model_path_vgg = "network/vgg16_zhang_perceptual.pkl"
+settings = Settings()
+model_path = settings.stylegan_network
+model_path_vgg = settings.vgg_network
 
 g_Gs = None
 g_Synthesis = None

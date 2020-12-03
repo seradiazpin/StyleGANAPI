@@ -17,9 +17,12 @@ from dnnlib import tflib
 import dnnlib
 from core.util.save import save_PIL_image
 from data.firebase.firebase import FireBase
+from config import Settings
+import json
 
-model_path = "network/network-snapshot-008964.pkl"
-model_path_vgg = "network/vgg16_zhang_perceptual.pkl"
+settings = Settings()
+model_path = settings.stylegan_network
+model_path_vgg = settings.vgg_network
 
 g_Gs = None
 g_Synthesis = None
@@ -104,64 +107,58 @@ def loadProjector():
     return g_Projector
 
 
-def generate_projection_mix(src_seeds, style_ranges, image):
-    image = PIL.Image.open(image).convert('RGB')
-    image = image.resize((1024, 1024), PIL.Image.ANTIALIAS)
-    print(np.array(image).shape)
-    image_array = np.array(image).swapaxes(0, 2).swapaxes(1, 2)
-    image_array = misc.adjust_dynamic_range(image_array, [0, 255], [-1, 1])
-    global g_Session
-    proj = loadProjector()
+def latent_vector_by_id(id):
+    fb = FireBase()
+    data = fb.read_query(u'Generated', u'seed', u'==', id)
+    if len(data) != 0:
+        res = json.loads(data[0].to_dict()["parameters"])["latent"]['0']
+        return res
+    return None
 
-    proj.start([image_array])
-    projection_images = []
-    steps = 200
-    snap = 10
-    with g_Session.as_default():
-        for step in proj.runSteps(steps):
-            print('\rstep: %d' % step, end='', flush=True)
-            if step % snap == 0 and step != steps:
-                results = proj.get_images()
-                projection_images.append(save_PIL_image(misc.convert_to_pil_image(
-                    misc.create_image_grid(results), drange=[-1, 1]), './static/projected/project-%d.png' % step))
-            if step == steps:
-                results = proj.get_images()
-                projection_images.append(save_PIL_image(misc.convert_to_pil_image(
-                    misc.create_image_grid(results), drange=[-1, 1]), './static/projected/project-last.png'))
-        dlatents = proj.get_dlatents()
-        noises = proj.get_noises()
-        with open("latent.txt", "w") as txt_file:
-            for line in dlatents[0][17]:
-                txt_file.write(" ".join('%.2f' % line) + "\n")
-        print('dlatents:', dlatents.shape)
-        print('noises:', len(noises), noises[0].shape, noises[-1].shape)
+
+def generate_projection_mix(src_seeds, style_ranges, id_image, style_tag=0):
+    latent_vector = latent_vector_by_id(id_image)
+    if latent_vector is None:
+        return None
+
     Gs, synthesis = load_generator()
     fmt = dict(output_transform=dict(
         func=dnnlib.tflib.convert_images_to_uint8, nchw_to_nhwc=True), minibatch_size=4)
-    a = {}
-
     with g_Session.as_default():
         src_latents = np.stack(np.random.RandomState(seed).randn(Gs.input_shape[1]) for seed in src_seeds)
-        dst_dlatents = proj.get_dlatents()
+        dst_latents = np.array(latent_vector)
+        dst_dlatents = Gs.components.mapping.run(dst_latents, None)
         src_dlatents = Gs.components.mapping.run(src_latents, None)  # [seed, layer, component]
-        ##dst_dlatents = Gs.components.mapping.run(dst_latents, None) # [seed, layer, component]
         src_images = Gs.components.synthesis.run(src_dlatents, randomize_noise=False, **fmt)
         dst_images = Gs.components.synthesis.run(dst_dlatents, randomize_noise=False, **fmt)
         row_dlatents = np.stack([dst_dlatents[0]] * len(src_seeds))
         row_dlatents[:, style_ranges[0]] = src_dlatents[:, style_ranges[0]]
         row_images = Gs.components.synthesis.run(row_dlatents, randomize_noise=False, **fmt)
-        a = save_mix(src_images[0], src_latents, dst_images[0], dst_dlatents, row_images[0], row_dlatents)
-        """
-        for i in range(11):
-            row_dlatents[:, style_ranges[0]] = 0.1 * i * src_dlatents[:, style_ranges[0]]
-            row_images = Gs.components.synthesis.run(row_dlatents, randomize_noise=False, **fmt)
-            a["mix"] = save_image(row_images[0], "./static/mix/mixpos0{0}.png".format(i))
-            row_dlatents[:, style_ranges[0]] = 0.1 * i * dst_dlatents[:, style_ranges[0]]
-            row_images = Gs.components.synthesis.run(row_dlatents, randomize_noise=False, **fmt)
-            a["mix"] = save_image(row_images[0], "./static/mix/mixneg0{0}.png".format(i))
-        """
+        a = save_mix(src_images[0], src_latents, src_seeds[0], dst_images[0], latent_vector, id_image, row_images[0],
+                     row_dlatents, "{0}-{1}-{2}".format(src_seeds[0], id_image, style_tag))
     return a
 
+def generate_projection_mix_2(src_seeds, style_ranges, id_image, style_tag=0):
+    latent_vector = latent_vector_by_id(id_image)
+    if latent_vector is None:
+        return None
+
+    Gs, synthesis = load_generator()
+    fmt = dict(output_transform=dict(
+        func=dnnlib.tflib.convert_images_to_uint8, nchw_to_nhwc=True), minibatch_size=4)
+    with g_Session.as_default():
+        dst_latents = np.stack(np.random.RandomState(seed).randn(Gs.input_shape[1]) for seed in src_seeds)
+        src_latents = np.array(latent_vector)
+        dst_dlatents = Gs.components.mapping.run(dst_latents, None)
+        src_dlatents = Gs.components.mapping.run(src_latents, None)  # [seed, layer, component]
+        src_images = Gs.components.synthesis.run(src_dlatents, randomize_noise=False, **fmt)
+        dst_images = Gs.components.synthesis.run(dst_dlatents, randomize_noise=False, **fmt)
+        row_dlatents = np.stack([src_dlatents[0]] * len(src_seeds))
+        row_dlatents[:, style_ranges[0]] = dst_dlatents[:, style_ranges[0]]
+        row_images = Gs.components.synthesis.run(row_dlatents, randomize_noise=False, **fmt)
+        a = save_mix(src_images[0], src_latents, src_seeds[0], dst_images[0], latent_vector, id_image, row_images[0],
+                     row_dlatents, "{0}-{1}-{2}".format(src_seeds[0], id_image, style_tag))
+    return a
 
 def check_if_exist_seed(seed):
     fb = FireBase()
@@ -195,7 +192,7 @@ def mix_images(src_seeds, dst_seeds, style_ranges, style_tag=0):
         row_images = Gs.components.synthesis.run(row_dlatents, randomize_noise=False, **fmt)
         a = save_mix(src_images[0], src_latents, src_seeds[0], dst_images[0], dst_latents, dst_seeds[0], row_images[0],
                      row_dlatents,
-                     "{0}-{1}-{2}".format(src_seeds[0], dst_seeds[0],style_tag))
+                     "{0}-{1}-{2}".format(src_seeds[0], dst_seeds[0], style_tag))
     return a
 
 

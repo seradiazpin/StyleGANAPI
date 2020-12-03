@@ -1,15 +1,16 @@
 import uvicorn
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
+from starlette.staticfiles import StaticFiles
 
 from routes import views
 
 app = FastAPI()
-
+app.mount("/webpage", StaticFiles(directory="webpage"), name="webpage")
 # Set all CORS enabled origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://thumbnailgenerator-c1e1b.web.app/", "http://localhost:4200"],
+    allow_origins=["https://thumbnailgenerator-c1e1b.web.app/", "http://192.168.0.9:8000'", "http://localhost:8000", "http://localhost:4200"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -1,9 +1,9 @@
 from typing import Dict
 from core.projector.projector_generator import generate_projection
-from core.mixer.mixer import  generate_projection_mix, mix_images
+from core.mixer.mixer import generate_projection_mix, mix_images
 
 
-def project_image(image) -> str:
+def project_image(image) -> Dict[str, str]:
     img = generate_projection(image)
     return img
 
@@ -25,7 +25,7 @@ def mix(seed, seed2, styles) -> Dict[str, str]:
     return img
 
 
-def project_mix(seed, styles, image) -> Dict[str, str]:
+def project_mix(seed, styles, id_image) -> Dict[str, str]:
     style = chose_style_layers(styles)
-    img = generate_projection_mix(seed, style, image)
+    img = generate_projection_mix(seed, style, id_image, styles)
     return img

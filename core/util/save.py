@@ -42,4 +42,5 @@ def save_image(images, parameters, path="./static/generated/"):
 def save_PIL_image(image, parameters):
     file_path, file_mame = file_name()
     image.resize((1920, 1080), Image.ANTIALIAS).save(file_path.format(file_mame["original"]))
-    return encoder.img_to_base64(image.resize((1920, 1080), Image.ANTIALIAS))
+    image.resize((480, 270), Image.ANTIALIAS).save(file_path.format(file_mame["scaled"]))
+    save_firebase(file_path, file_mame, parameters)

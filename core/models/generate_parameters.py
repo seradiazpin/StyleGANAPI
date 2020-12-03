@@ -14,6 +14,12 @@ class MixParameters(BaseModel):
     style: Optional[int]
 
 
+class ProjectionMixParameters(BaseModel):
+    seed1: Optional[int]
+    style: Optional[int]
+    id_image: Optional[str]
+
+
 class GalleryPagination(BaseModel):
     size: Optional[int]
     page: Optional[str]

@@ -16,10 +16,11 @@ import os
 from threading import Lock
 from core.projector.projector import Projector
 from core.training import misc
-from core.util import encoder
+from config import Settings
 
-model_path = "network/network-snapshot-008964.pkl"
-model_path_vgg = "network/vgg16_zhang_perceptual.pkl"
+settings = Settings()
+model_path = settings.stylegan_network
+model_path_vgg = settings.vgg_network
 
 g_Gs = None
 g_Synthesis = None
@@ -104,6 +105,20 @@ def loadProjector():
     return g_Projector
 
 
+def check_if_exist_seed(seed):
+    fb = FireBase()
+    data = fb.read_query(u'Generated', u'seed', u'==', seed)
+    url = {}
+    if len(data) != 0:
+        for doc in data:
+            url = doc.to_dict()
+            url["link_small"] = fb.get_file_url(file=url["link_small"])
+            url["link"] = fb.get_file_url(file=url["link"])
+            url["id"] = doc.id
+        return url
+    return None
+
+
 def generate_projection(image):
     image = PIL.Image.open(image).convert('RGB')
     image = image.resize((1024, 1024), PIL.Image.ANTIALIAS)
@@ -113,25 +128,16 @@ def generate_projection(image):
     image_array = misc.adjust_dynamic_range(image_array, [0, 255], [-1, 1])
 
     proj.start([image_array])
-    projection_images = []
-    steps = 200
-    snap = 50
+    id_projection = uuid.uuid4()
+    steps = 100
     with g_Session.as_default():
         for step in proj.runSteps(steps):
             print('\rstep: %d' % step, end='', flush=True)
-            if step % snap == 0 and step != steps:
-                results = proj.get_images()
-                projection_images.append(save_PIL_image(misc.convert_to_pil_image(
-                    misc.create_image_grid(results), drange=[-1, 1]), './static/projected/project-%d.png' % step))
-            if step == steps:
-                results = proj.get_images()
-                projection_images.append(save_PIL_image(misc.convert_to_pil_image(
-                    misc.create_image_grid(results), drange=[-1, 1]), './static/projected/project-last.png'))
         dlatents = proj.get_dlatents()
-        noises = proj.get_noises()
-        with open("latent.txt", "w") as txt_file:
-            for line in dlatents[0][17]:
-                txt_file.write(" ".join('%.2f' % line) + "\n")
-        print('dlatents:', dlatents.shape)
-        print('noises:', len(noises), noises[0].shape, noises[-1].shape)
-    return projection_images
+        results = proj.get_images()
+        save_PIL_image(misc.convert_to_pil_image(misc.create_image_grid(results), drange=[-1, 1]),
+                       {"type_description": "project_image", "src_id": str(id_projection),
+                        "latent": dict(enumerate(dlatents.tolist())), "seed":  str(id_projection)})
+
+    exist = check_if_exist_seed(str(id_projection))
+    return exist
