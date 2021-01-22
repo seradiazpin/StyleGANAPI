@@ -14,3 +14,4 @@ example.png
 .vscode/
 .idea
 data/firebase/firebasekey.json
+data/firebase/anime-faces.json

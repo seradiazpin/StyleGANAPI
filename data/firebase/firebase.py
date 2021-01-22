@@ -2,12 +2,13 @@ import datetime
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore, storage
-
+from config import Settings
+settings = Settings()
 
 class FireBase(object):
     def __init__(self):
-        self.credentials = credentials.Certificate("./data/firebase/firebasekey.json")
-        self.bucket = "thumbnailgenerator-c1e1b.appspot.com"
+        self.credentials = credentials.Certificate(settings.firebase_config)
+        self.bucket = settings.firebase_bucket
         if not firebase_admin._apps:
             firebase_admin.initialize_app(self.credentials)
         self.db = firestore.client()

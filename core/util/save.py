@@ -6,7 +6,8 @@ from PIL import Image
 
 from core.util import encoder
 from data.firebase.firebase import FireBase
-
+from config import Settings
+settings = Settings()
 
 def file_name(path="./static/generated/"):
     file_mame = {
@@ -32,15 +33,15 @@ def save_firebase(file, file_names, parameters={}):
 
 def save_image(images, parameters, path="./static/generated/"):
     # Save image.
-    new_img = Image.fromarray(images, 'RGB').resize((1920, 1080), Image.ANTIALIAS)
+    new_img = Image.fromarray(images, 'RGB').resize((settings.original_w, settings.original_h), Image.ANTIALIAS)
     file_path, file_mame = file_name(path)
-    Image.fromarray(images, 'RGB').resize((1920, 1080), Image.ANTIALIAS).save(file_path.format(file_mame["original"]))
-    Image.fromarray(images, 'RGB').resize((480, 270), Image.ANTIALIAS).save(file_path.format(file_mame["scaled"]))
+    Image.fromarray(images, 'RGB').resize((settings.original_w, settings.original_h), Image.ANTIALIAS).save(file_path.format(file_mame["original"]))
+    Image.fromarray(images, 'RGB').resize((settings.small_w, settings.small_h), Image.ANTIALIAS).save(file_path.format(file_mame["scaled"]))
     save_firebase(file_path, file_mame, parameters)
 
 
 def save_PIL_image(image, parameters):
     file_path, file_mame = file_name()
-    image.resize((1920, 1080), Image.ANTIALIAS).save(file_path.format(file_mame["original"]))
-    image.resize((480, 270), Image.ANTIALIAS).save(file_path.format(file_mame["scaled"]))
+    image.resize((settings.original_w, settings.original_h), Image.ANTIALIAS).save(file_path.format(file_mame["original"]))
+    image.resize((settings.small_w, settings.small_h), Image.ANTIALIAS).save(file_path.format(file_mame["scaled"]))
     save_firebase(file_path, file_mame, parameters)

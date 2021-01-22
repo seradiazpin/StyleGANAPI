@@ -129,7 +129,7 @@ def generate_projection(image):
 
     proj.start([image_array])
     id_projection = uuid.uuid4()
-    steps = 100
+    steps = 1000
     with g_Session.as_default():
         for step in proj.runSteps(steps):
             print('\rstep: %d' % step, end='', flush=True)

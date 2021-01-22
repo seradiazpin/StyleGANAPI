@@ -126,9 +126,9 @@ def generate_projection_mix(src_seeds, style_ranges, id_image, style_tag=0):
         func=dnnlib.tflib.convert_images_to_uint8, nchw_to_nhwc=True), minibatch_size=4)
     with g_Session.as_default():
         src_latents = np.stack(np.random.RandomState(seed).randn(Gs.input_shape[1]) for seed in src_seeds)
-        dst_latents = np.array(latent_vector)
-        dst_dlatents = Gs.components.mapping.run(dst_latents, None)
+        dst_dlatents = np.array([latent_vector])
         src_dlatents = Gs.components.mapping.run(src_latents, None)  # [seed, layer, component]
+        ##dst_dlatents = Gs.components.mapping.run(dst_latents, None) # [seed, layer, component]
         src_images = Gs.components.synthesis.run(src_dlatents, randomize_noise=False, **fmt)
         dst_images = Gs.components.synthesis.run(dst_dlatents, randomize_noise=False, **fmt)
         row_dlatents = np.stack([dst_dlatents[0]] * len(src_seeds))
@@ -137,6 +137,7 @@ def generate_projection_mix(src_seeds, style_ranges, id_image, style_tag=0):
         a = save_mix(src_images[0], src_latents, src_seeds[0], dst_images[0], latent_vector, id_image, row_images[0],
                      row_dlatents, "{0}-{1}-{2}".format(src_seeds[0], id_image, style_tag))
     return a
+
 
 def generate_projection_mix_2(src_seeds, style_ranges, id_image, style_tag=0):
     latent_vector = latent_vector_by_id(id_image)
@@ -159,6 +160,47 @@ def generate_projection_mix_2(src_seeds, style_ranges, id_image, style_tag=0):
         a = save_mix(src_images[0], src_latents, src_seeds[0], dst_images[0], latent_vector, id_image, row_images[0],
                      row_dlatents, "{0}-{1}-{2}".format(src_seeds[0], id_image, style_tag))
     return a
+
+
+def generate_projection_mix_old(src_seeds, style_ranges, image, style_tag=0):
+    image = PIL.Image.open(image).convert('RGB')
+    image = image.resize((1024, 1024), PIL.Image.ANTIALIAS)
+    print(np.array(image).shape)
+    image_array = np.array(image).swapaxes(0, 2).swapaxes(1, 2)
+    image_array = misc.adjust_dynamic_range(image_array, [0, 255], [-1, 1])
+    global g_Session
+    proj = loadProjector()
+
+    proj.start([image_array])
+    projection_images = []
+    steps = 400
+    snap = 10
+    with g_Session.as_default():
+        for step in proj.runSteps(steps):
+            print('\rstep: %d' % step, end='', flush=True)
+        dlatents = proj.get_dlatents()
+        noises = proj.get_noises()
+        print('dlatents:', dlatents.shape)
+        print('noises:', len(noises), noises[0].shape, noises[-1].shape)
+    Gs, synthesis = load_generator()
+    fmt = dict(output_transform=dict(
+        func=dnnlib.tflib.convert_images_to_uint8, nchw_to_nhwc=True), minibatch_size=4)
+
+    with g_Session.as_default():
+        src_latents = np.stack(np.random.RandomState(seed).randn(Gs.input_shape[1]) for seed in src_seeds)
+        dst_dlatents = proj.get_dlatents()
+        src_dlatents = Gs.components.mapping.run(src_latents, None)  # [seed, layer, component]
+        ##dst_dlatents = Gs.components.mapping.run(dst_latents, None) # [seed, layer, component]
+        src_images = Gs.components.synthesis.run(src_dlatents, randomize_noise=False, **fmt)
+        dst_images = Gs.components.synthesis.run(dst_dlatents, randomize_noise=False, **fmt)
+        row_dlatents = np.stack([dst_dlatents[0]] * len(src_seeds))
+        row_dlatents[:, style_ranges[0]] = src_dlatents[:, style_ranges[0]]
+        row_images = Gs.components.synthesis.run(row_dlatents, randomize_noise=False, **fmt)
+        id_image = str(uuid.uuid4())
+        a = save_mix(src_images[0], src_latents, src_seeds[0], dst_images[0], dst_dlatents, id_image, row_images[0],
+                     row_dlatents, "{0}-{1}-{2}".format(src_seeds[0], id_image, 0))
+    return a
+
 
 def check_if_exist_seed(seed):
     fb = FireBase()

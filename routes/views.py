@@ -1,7 +1,7 @@
 from typing import Dict
 from apis.gallery.gallery import gallery
 from apis.generator.generator import generate_image
-from apis.projector.projector import project_image, project_mix, mix
+from apis.projector.projector import project_image, project_mix, mix, project_mix_old
 from fastapi import APIRouter, Depends, UploadFile, File, Form
 from fastapi.responses import FileResponse, JSONResponse
 
@@ -57,6 +57,12 @@ async def project_image_file(file: UploadFile = File(...)):
 async def project_mix_file(file: UploadFile = File(...)):
     project_image(file.file)
     return FileResponse("static/projected/project-last.png")
+
+
+@router.post("/projector/mixProjectionOld", tags=["projector"])
+async def mix_projection_bs64(seed1: int = Form(...), seed2: int = Form(...), style: int = Form(...),
+                              file: UploadFile = File(...)) -> Dict[str, str]:
+    return project_mix_old([seed1], style, file.file)
 
 
 @router.get("/", tags=["webpage"])
