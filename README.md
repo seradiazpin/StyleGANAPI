@@ -7,4 +7,5 @@ Funcionality:
 * Generator : Generate a image using a seed or the latent vector.
 * Projector and Mix : Generate a projection of an image so it can be use by styleGAN. This also allow to mix layer betewn two generated images.
 
-
+This API is the BackEnd for this site:
+https://github.com/seradiazpin/ThumbnailArtGenerator
