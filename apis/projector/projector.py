@@ -1,37 +1,24 @@
 from typing import Dict
-from core.projector.projector_generator import generate_projection
-from core.mixer.mixer import generate_projection_mix, mix_images, generate_projection_mix_old
+
+from config import Settings
+from core.generator.GeneratorService import GeneratorService
+from core.image_storage.FirebaseImageStorage import FirebaseImageStorage
+from core.network_operations.StyleGANWrapper import StyleGANWrapper
+
+settings = Settings()
 
 
 def project_image(image) -> Dict[str, str]:
-    img = generate_projection(image)
-    return img
-
-
-def chose_style_layers(styles: int) -> []:
-    style = [range(8, 18)]
-    if styles == 0:
-        style = [range(0, 4)]
-    if styles == 1:
-        style = [range(4, 8)]
-    if styles == 2:
-        style = [range(8, 18)]
-    return style
-
-
-def mix(seed, seed2, styles) -> Dict[str, str]:
-    style = chose_style_layers(styles)
-    img = mix_images(seed, seed2, style, styles)
+    generatorService = GeneratorService(StyleGANWrapper(settings.stylegan_network, settings.vgg_network)
+                                        , FirebaseImageStorage(settings.original_w, settings.original_h
+                                                               , settings.small_w, settings.small_h))
+    img = generatorService.ProjectImage(image)
     return img
 
 
 def project_mix(seed, styles, id_image) -> Dict[str, str]:
-    style = chose_style_layers(styles)
-    img = generate_projection_mix(seed, style, id_image, styles)
-    return img
-
-
-def project_mix_old(seed, styles, image) -> Dict[str, str]:
-    style = chose_style_layers(styles)
-    img = generate_projection_mix_old(seed, style, image,styles )
+    generatorService = GeneratorService(StyleGANWrapper(settings.stylegan_network, settings.vgg_network)
+                                        , FirebaseImageStorage(settings.original_w, settings.original_h
+                                                               , settings.small_w, settings.small_h))
+    img = generatorService.MixProjection(seed, id_image)
     return img
