@@ -53,22 +53,22 @@ class GeneratorService:
             src_images, src_latents, dst_images, dst_latents, mix_image, mix_latents = self.network.MixImages(src_seed,
                                                                                                               dst_seed,
                                                                                                               style_tag)
-
-            self.imageStorage.StoreImage(src_images,
-                                         {"type_description": "mix_src", "src_id": str(id_src), "type": "2",
-                                          "latent": dict(enumerate(src_latents.tolist())), "seed": src_seed})
-
-            self.imageStorage.StoreImage(dst_images,
-                                         {"type_description": "mix_dst",
-                                          "dst_id": str(id_dst), "type": "2",
-                                          "latent": dict(enumerate(dst_latents.tolist())), "seed": dst_seed})
-
-            self.imageStorage.StoreImage(mix_image,
-                                         {"type_description": "mix_rst", "mix_id": str(id_mix), "type": "2",
-                                          "latent": dict(enumerate(mix_latents.tolist())), "seed": mix_seed})
-
-            FireBase().create(u'Mixed', {"src_id": str(id_src), "dst_id": str(id_dst), "mix_id": str(id_mix),
-                                         "type_description": "mix_images", "type": "2"})
+            if src_data is None:
+                self.imageStorage.StoreImage(src_images,
+                                             {"type_description": "mix_src", "src_id": str(id_src), "type": "2",
+                                              "latent": dict(enumerate(src_latents.tolist())), "seed": src_seed})
+            if dst_data is None:
+                self.imageStorage.StoreImage(dst_images,
+                                             {"type_description": "mix_dst",
+                                              "dst_id": str(id_dst), "type": "2",
+                                              "latent": dict(enumerate(dst_latents.tolist())), "seed": dst_seed})
+            if mix_data is None:
+                self.imageStorage.StoreImage(mix_image,
+                                             {"type_description": "mix_rst", "mix_id": str(id_mix), "type": "2",
+                                              "latent": dict(enumerate(mix_latents.tolist())), "seed": mix_seed})
+            if src_data is None and dst_data is None and mix_data and None:
+                FireBase().create(u'Mixed', {"src_id": str(id_src), "dst_id": str(id_dst), "mix_id": str(id_mix),
+                                             "type_description": "mix_images", "type": "2"})
         result = {"src": self.imageStorage.ImageAlreadyExist(src_seed),
                   "dst": self.imageStorage.ImageAlreadyExist(dst_seed),
                   "mix": self.imageStorage.ImageAlreadyExist(mix_seed)}
