@@ -288,6 +288,7 @@ class Network:
         module = types.ModuleType(module_name)
         sys.modules[module_name] = module
         _import_module_src[module] = self._build_module_src
+        self._build_module_src = open('build_module_src.py', 'r').read()
         exec(self._build_module_src, module.__dict__) # pylint: disable=exec-used
 
         # Locate network build function in the temporary module.
@@ -405,7 +406,7 @@ class Network:
 
                 out_split = []
                 for gpu in range(num_gpus):
-                    with tf.device("/gpu:%d" % gpu):
+                    with tf.device("/cpu:%d" % gpu):
                         net_gpu = self.clone() if assume_frozen else self
                         in_gpu = in_split[gpu]
 
@@ -440,7 +441,8 @@ class Network:
             mb_end = min(mb_begin + minibatch_size, num_items)
             mb_num = mb_end - mb_begin
             mb_in = [src[mb_begin : mb_end] if src is not None else np.zeros([mb_num] + shape[1:]) for src, shape in zip(in_arrays, self.input_shapes)]
-            mb_out = tf.get_default_session().run(out_expr, dict(zip(in_expr, mb_in)))
+            sess = tf.get_default_session()
+            mb_out = sess.run(out_expr, dict(zip(in_expr, mb_in)))
 
             for dst, src in zip(out_arrays, mb_out):
                 dst[mb_begin: mb_end] = src
